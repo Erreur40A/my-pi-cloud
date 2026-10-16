@@ -37,7 +37,8 @@ Build order: server → web → android → desktop.
 
 - One folder per feature: `server/docs/<feature>/spec.md`. The spec is the source of truth: read it before working on a feature, update it when a decision changes.
 - Specs record the **why** of each decision, not only the what: it feeds the LinkedIn posts.
-- Current specs: [`file-storage`](server/docs/file-storage/spec.md), [`network`](server/docs/network/spec.md).
+- Never write the maintainer's first name in a spec: say "the maintainer" (the maintainer is Erreur40A, both names are interchangeable) or rephrase impersonally.
+- Current specs: [`file-storage`](server/docs/file-storage/spec.md), [`network`](server/docs/network/spec.md), [`deployment`](server/docs/deployment/spec.md).
 
 ## Server stack
 
@@ -51,6 +52,5 @@ Build order: server → web → android → desktop.
 
 Discussed briefly, not settled yet. Do not treat them as decisions:
 
-- Docker setup on the Pi (decided: the whole stack, Nginx included, runs in Docker; details open).
 - Desktop language.
 - Authentication: multi-user, opaque session token instead of a JWT (HttpOnly cookie on web, Keystore on Android, storage on desktop to be decided).
