@@ -26,7 +26,7 @@ Everything in the repo is in **English**: identifiers, comments, commit messages
 
 | Directory | Content | Status |
 |---|---|---|
-| `server/` | Spring Boot API, serves the three clients | Spec for file storage written; project not generated yet |
+| `server/` | Spring Boot API, serves the three clients | Project generated (Spring Initializr), no application code yet; file storage spec written |
 | `web/` | React web app | Not started |
 | `android/` | Kotlin Android app | Not started |
 | `desktop/` | Desktop app (Rust/Tauri considered, Compose Multiplatform as fallback) | Not started |
@@ -37,7 +37,7 @@ Build order: server → web → android → desktop.
 
 - One folder per feature: `server/docs/<feature>/spec.md`. The spec is the source of truth: read it before working on a feature, update it when a decision changes.
 - Specs record the **why** of each decision, not only the what: it feeds the LinkedIn posts.
-- Current specs: [`file-storage`](server/docs/file-storage/spec.md).
+- Current specs: [`file-storage`](server/docs/file-storage/spec.md), [`network`](server/docs/network/spec.md).
 
 ## Server stack
 
@@ -51,7 +51,6 @@ Build order: server → web → android → desktop.
 
 Discussed briefly, not settled yet. Do not treat them as decisions:
 
-- Network access (LAN only for now, VPN after all apps are done).
-- Docker setup on the Pi.
+- Docker setup on the Pi (decided: the whole stack, Nginx included, runs in Docker; details open).
 - Desktop language.
 - Authentication: multi-user, opaque session token instead of a JWT (HttpOnly cookie on web, Keystore on Android, storage on desktop to be decided).

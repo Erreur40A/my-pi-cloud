@@ -58,7 +58,21 @@ The folder is identified by its **id**, not its name: a rename during the upload
 
 ### 2. Chunks
 
-Request: `{ fileId, n, sha256Chunk, data }`
+The body carries **only the raw bytes** of the chunk; metadata goes in the URL and headers. JSON was ruled out: base64 adds a third to every chunk, on a Wi-Fi link that is already the bottleneck, and forces the Pi to decode a 13 MB string in memory.
+
+```http
+PUT /api/files/{fileId}/chunks/{n}
+Content-Type: application/octet-stream
+Content-Length: <chunk size>
+Content-Digest: sha-256=:<base64 SHA-256 of the chunk>:
+
+<raw chunk bytes>
+```
+
+- The URL says **where** (which file, which chunk), the headers **describe** (type, fingerprint), the body is **only data**.
+- `Content-Digest` (RFC 9530) is the hash of the bytes in this message, i.e. the chunk. `Repr-Digest` would be the hash of the whole file: not used here.
+- No `Content-Range`: the server computes the byte offsets from `n`, so the client never sends them.
+- `Content-Length` lets the server reject a chunk of the wrong size before reading it.
 
 - Chunk size: **10 MB**. Chunks are numbered from `1` to `numberOfChunks`.
 - **Sequential** sending in V1. The protocol allows parallel uploads, to be evaluated with a real benchmark: on a LAN, a single connection already saturates the link.
