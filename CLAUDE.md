@@ -29,7 +29,7 @@ Everything in the repo is in **English**: identifiers, comments, commit messages
 | `server/` | Spring Boot API, serves the three clients | Project generated (Spring Initializr), no application code yet; file storage spec written |
 | `web/` | React web app | Not started |
 | `android/` | Kotlin Android app | Not started |
-| `desktop/` | Desktop app (Rust/Tauri considered, Compose Multiplatform as fallback) | Not started |
+| `desktop/` | Desktop app: Tauri (React UI, Rust backend, async Rust attempted); Compose Multiplatform as fallback if async Rust proves too hard. Built to learn Rust. | Not started |
 
 Build order: server → web → android → desktop.
 
@@ -38,7 +38,7 @@ Build order: server → web → android → desktop.
 - One folder per feature: `server/docs/<feature>/spec.md`. The spec is the source of truth: read it before working on a feature, update it when a decision changes.
 - Specs record the **why** of each decision, not only the what: it feeds the LinkedIn posts.
 - Never write the maintainer's first name in a spec: say "the maintainer" (the maintainer is Erreur40A, both names are interchangeable) or rephrase impersonally.
-- Current specs: [`file-storage`](server/docs/file-storage/spec.md), [`network`](server/docs/network/spec.md), [`deployment`](server/docs/deployment/spec.md).
+- Current specs: [`file-storage`](server/docs/file-storage/spec.md), [`network`](server/docs/network/spec.md), [`deployment`](server/docs/deployment/spec.md), [`auth`](server/docs/auth/spec.md).
 
 ## Server stack
 
@@ -50,7 +50,4 @@ Build order: server → web → android → desktop.
 
 ## Open topics
 
-Discussed briefly, not settled yet. Do not treat them as decisions:
-
-- Desktop language.
-- Authentication: multi-user, opaque session token instead of a JWT (HttpOnly cookie on web, Keystore on Android, storage on desktop to be decided).
+Every design topic of V1 is settled in the specs. Remaining small decisions are listed in the "Open" section at the end of each spec: do not treat them as decided.
