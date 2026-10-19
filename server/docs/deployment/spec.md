@@ -19,6 +19,24 @@ Docker hides several traps: everything works while being exposed.
 - **No secret in an image or in the repo**: `.env` is not versioned, only `.env.exemple` is.
 - Volumes (files, PostgreSQL data) owned by the containers' non-root UID.
 
+## Compose files
+
+| File | Loaded | Content |
+|---|---|---|
+| `compose.yaml` | Always | Production. Safe on its own: PostgreSQL publishes no port. |
+| `compose.dev.yaml` | Only with `-f` | Development additions, e.g. PostgreSQL published on `127.0.0.1:5432` for `bootRun`. |
+
+- Production: `docker compose up -d`. Development: `docker compose -f compose.yaml -f compose.dev.yaml up -d`.
+- Why production is the base: someone who forgets `-f` on the Pi gets the safe setup. With development as the base, production would have to remove the port with `!reset` (merging adds list entries, it never removes them), and forgetting the production file would publish it.
+- Why not `compose.override.yaml`: Compose loads it automatically whenever it exists. The Pi has a full clone of the repo, so the development file would be loaded in production.
+- Versioning the production file is safe: it holds no secret value. Values come from `.env` (not versioned) and the JWT key from `secrets/` (git-ignored).
+
+### Configuration reaching Spring Boot
+
+- Production: Compose reads `.env` and passes values to the container as **environment variables**, which Spring Boot reads before `application.properties`. The `.env` file itself is never copied into the container.
+- Not as command-line arguments: any user of the Pi sees them with `ps aux`, while `/proc/<pid>/environ` is readable only by the process owner.
+- Development: `bootRun` runs on the host, outside Docker. Spring Boot imports the root `.env` itself with `spring.config.import=optional:file:../.env…`; `optional:` because the file does not exist inside the production container.
+
 ## Images
 
 - Images are **built on the Pi**. The dev machine is x86, the Pi is ARM: an image built on the PC would not run there.
@@ -79,3 +97,4 @@ Check out the previous tag, rebuild, and restore the dump taken at step 2 (a Fly
 - Cron frequency for the update check.
 - Where `acme.sh` runs and how Nginx reloads a renewed certificate (see [network](../network/spec.md#open)).
 - Rollback steps in detail, once the deploy script exists.
+- Exact `spring.config.import` value for `.env`: Spring Boot picks a loader from the file extension, and `.env` has none.
