@@ -56,6 +56,21 @@
 
 - Environment variables were ruled out for the desktop: an app cannot create one that outlives its process (it would have to write the token in clear in a shell profile), and any process of the user can read them.
 
+## Token transport
+
+The server accepts two transports:
+
+| Transport | Used by | Request | Response |
+|---|---|---|---|
+| Cookies | Web | Cookies sent by the browser | `Set-Cookie` |
+| Header and body | Android, desktop, curl | `Authorization: Bearer <jwt>` (RFC 6750); refresh token in the body | Tokens in the body |
+
+- **Login**: the client states which transport it wants (`cookie` or `body`). No token exists yet, so the server has nothing else to go on. Lying gains nothing: getting tokens takes the password, and an attacker who has it is already in.
+- **Refresh**: the response goes back **through the channel the refresh token came in**, whatever the client states. Why: a malicious script in the page (XSS) cannot read the `HttpOnly` cookie, but the browser attaches it by itself. If the client could ask for `body`, the script would call the refresh endpoint and read fresh tokens from the response.
+- **Both transports in one request** (a cookie and an `Authorization` header, or a refresh token in a cookie and in the body): `400`, with no side effect. No correct client sends both. Revoking anything would be wrong: the request is not proof of theft (a developer testing with curl can do it), and an access token does not say which refresh chain it belongs to.
+- Guessing the client from `User-Agent` was rejected: free text that changes with every browser version, and a wrong guess hands tokens to page scripts.
+- The `Authorization` header is not exposed to CSRF: a browser never adds it by itself.
+
 ## CSRF
 
 - The browser sends cookies by itself, even on requests triggered by another site.
