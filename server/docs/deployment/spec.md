@@ -35,7 +35,14 @@ Docker hides several traps: everything works while being exposed.
 
 - Production: Compose reads `.env` and passes values to the container as **environment variables**, which Spring Boot reads before `application.properties`. The `.env` file itself is never copied into the container.
 - Not as command-line arguments: any user of the Pi sees them with `ps aux`, while `/proc/<pid>/environ` is readable only by the process owner.
-- Development: `bootRun` runs on the host, outside Docker. Spring Boot imports the root `.env` itself with `spring.config.import=optional:file:../.env…`; `optional:` because the file does not exist inside the production container.
+- Database URL: `application.properties` holds the development URL (`localhost`); production overrides it whole with `SPRING_DATASOURCE_URL`, which Spring Boot maps to `spring.datasource.url` (relaxed binding).
+  - Why: it is Spring Boot's standard variable, so no custom placeholder to maintain.
+  - The database name stays in `.env` only: `compose.yaml` builds the URL with `${POSTGRES_DB}`, as it already does for the PostgreSQL service.
+  - Rejected: a `${DB_HOST:localhost}` placeholder. It works too, but adds a project-specific variable for no gain.
+- Development: `bootRun` runs on the host, outside Docker. Spring Boot imports the root `.env` itself with `spring.config.import=optional:file:../.env[.properties]`.
+  - `optional:` because the file does not exist inside the production container. Trap: a wrong path is skipped silently too; remove `optional:` once to check the file is found.
+  - `[.properties]` because Spring Boot picks a loader from the file extension, and `.env` has none. Without it, startup fails.
+  - Not `env:`: it reads properties stored *inside* an environment variable, not a `.env` file.
 
 ## Images
 
@@ -97,4 +104,4 @@ Check out the previous tag, rebuild, and restore the dump taken at step 2 (a Fly
 - Cron frequency for the update check.
 - Where `acme.sh` runs and how Nginx reloads a renewed certificate (see [network](../network/spec.md#open)).
 - Rollback steps in detail, once the deploy script exists.
-- Exact `spring.config.import` value for `.env`: Spring Boot picks a loader from the file extension, and `.env` has none.
+- Database password for the Spring Boot container: read with `configtree:` on `/run/secrets/`. The secret file is `400` owned by PostgreSQL's UID 999, unreadable by Spring Boot's non-root user. Direction chosen: a dedicated non-root user for Spring Boot, sharing a group with PostgreSQL, and the file in `440`. Rejected: running Spring Boot as UID 999 (after a container escape, the attacker would be the owner of the database files on the host), and two copies of the secret (they drift apart). Still to decide: which GID, and checking it is not used by a group on the Pi's host.
