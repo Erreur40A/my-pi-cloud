@@ -11,10 +11,10 @@ services:
       - postgres_data:/var/lib/postgresql
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_passwd
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       POSTGRES_USER: ${POSTGRES_USER}
     secrets:
-      - db_passwd
+      - db_password
     deploy:
       resources:
         limits:
@@ -42,7 +42,7 @@ services:
         max-file: "3"
 
 secrets:
-  db_passwd:
+  db_password:
     file: ./secrets/db_password.txt
 
 volumes:
