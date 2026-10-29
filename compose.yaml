@@ -9,12 +9,15 @@ services:
       - db
     volumes:
       - postgres_data:/var/lib/postgresql
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       POSTGRES_USER: ${POSTGRES_USER}
     secrets:
       - db_password
+      - db_owner_password
+      - db_app_password
     deploy:
       resources:
         limits:
@@ -44,6 +47,10 @@ services:
 secrets:
   db_password:
     file: ./secrets/db_password.txt
+  db_owner_password:
+    file: ./secrets/db_owner_password.txt
+  db_app_password:
+    file: ./secrets/db_app_password.txt
 
 volumes:
   postgres_data:
