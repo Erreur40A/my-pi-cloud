@@ -5,6 +5,14 @@
 - Several users (family), open sign-up, LAN only (see [network](../network/spec.md)).
 - No roles in V1: every user has the same rights over their own files.
 
+## Accounts
+
+- Users log in with their **email**. It is a `UNIQUE NOT NULL` column, not the primary key: the key is a UUID (see [database](../database/spec.md#ids)).
+  - Why not the email as primary key: an address can change, and every table referencing the user (files, refresh tokens) would have to follow. The user id also goes into the JWT's `sub`, readable by anyone holding the token: an email there would leak personal data.
+- Emails are stored **trimmed and lowercased**: `Alice@example.com` and `alice@example.com` are the same account.
+- No "forgot password" in V1: the maintainer resets a forgotten password. Why: a reset link needs outbound email from a LAN-only Pi (SMTP provider, app password, expiring reset tokens), too much for a handful of family users.
+- Table name: `users`. `user` is a reserved word in PostgreSQL (`SELECT user;` returns the current role).
+
 ## Passwords
 
 - Hashed with **Argon2id** through Spring Security's `Argon2PasswordEncoder`.

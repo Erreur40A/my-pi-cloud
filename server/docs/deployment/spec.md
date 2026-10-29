@@ -53,6 +53,8 @@ Docker hides several traps: everything works while being exposed.
   2. the final stage holds **only a JRE** and the `.jar`.
 
   Why: a smaller image, and a smaller attack surface (a compiler in production is a tool handed to an attacker). Nothing but Docker is installed on the Pi.
+- Spring Boot images are **tagged with the git tag** (`v1.2.0`), and the Pi keeps the **last three**; the deploy script deletes older ones. Why: with a single name, each build replaced the previous image, and a rollback had to rebuild it (minutes of downtime, and a build that can fail too).
+- The Spring Boot container has a Compose `healthcheck` calling `/actuator/health`. The final image has no `curl` (checked: the `eclipse-temurin` JRE image has neither `curl` nor `wget`), and adding one would bring back a tool for an attacker. The call is made by a small Java class using the JDK's HTTP client, compiled in the build stage and copied into the final image (a JRE cannot run a `.java` source file: that needs the `jdk.compiler` module).
 
 ## Startup
 
@@ -75,11 +77,12 @@ Docker hides several traps: everything works while being exposed.
 1. Verify the tag's signature; stop if it fails.
 2. `pg_dump` the database.
 3. Build the new image **while the old version keeps running**. If the build fails, the old version stays up.
-4. Switch (`docker compose up -d`): a few seconds of downtime, accepted. Uploads interrupted by the switch resume on their own (chunks received are stored in the database, see [file-storage](../file-storage/spec.md#2-chunks)).
+4. Switch (`docker compose up -d --wait`): a few seconds of downtime, accepted. Uploads interrupted by the switch resume on their own (chunks received are stored in the database, see [file-storage](../file-storage/spec.md#2-chunks)).
+5. `--wait` returns once every service is healthy, or with an error code if one is not. On error, roll back. Why: without this check, `up -d` returns at once and a version failing at startup (a broken migration, for instance) restarts in a loop with nobody noticing.
 
 ### Rollback
 
-Check out the previous tag, rebuild, and restore the dump taken at step 2 (a Flyway migration may have changed the schema).
+Check out the previous tag, start its image (still on the Pi), and restore the dump taken at step 2 (a Flyway migration may have changed the schema).
 
 ### Rejected
 
@@ -104,4 +107,4 @@ Check out the previous tag, rebuild, and restore the dump taken at step 2 (a Fly
 - Cron frequency for the update check.
 - Where `acme.sh` runs and how Nginx reloads a renewed certificate (see [network](../network/spec.md#open)).
 - Rollback steps in detail, once the deploy script exists.
-- Database password for the Spring Boot container: read with `configtree:` on `/run/secrets/`. The secret file is `400` owned by PostgreSQL's UID 999, unreadable by Spring Boot's non-root user. Direction chosen: a dedicated non-root user for Spring Boot, sharing a group with PostgreSQL, and the file in `440`. Rejected: running Spring Boot as UID 999 (after a container escape, the attacker would be the owner of the database files on the host), and two copies of the secret (they drift apart). Still to decide: which GID, and checking it is not used by a group on the Pi's host.
+- Database passwords for the Spring Boot container (`db_owner_password`, `db_app_password`, see [database](../database/spec.md#secrets)): read with `configtree:` on `/run/secrets/`. The secret files are `400` owned by PostgreSQL's UID 999, unreadable by Spring Boot's non-root user. Direction chosen: a dedicated non-root user for Spring Boot, sharing a group with PostgreSQL, and these two files in `440` (the superuser's stays `400`). Rejected: running Spring Boot as UID 999 (after a container escape, the attacker would be the owner of the database files on the host), and two copies of each secret (they drift apart). Still to decide: which GID, and checking it is not used by a group on the Pi's host.
